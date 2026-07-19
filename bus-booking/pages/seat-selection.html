@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Select Seats — BusGo</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo"><a href="../index.html" style="text-decoration:none;color:inherit;">🚌 BusGo</a></div>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </div>
+  </nav>
+
+  <div class="seat-page">
+    <!-- Steps -->
+    <div class="booking-steps">
+      <div class="step done">1. Search</div>
+      <div class="step active">2. Select Seats</div>
+      <div class="step">3. Passenger Info</div>
+      <div class="step">4. Confirm</div>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="bus-summary-bar">
+      <div>
+        <div class="summary-route" id="summaryRoute">Loading...</div>
+        <div class="summary-meta" id="summaryMeta"></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="summary-price" id="summaryPrice">₹0</div>
+        <div class="price-note">per seat</div>
+      </div>
+    </div>
+
+    <div class="seat-layout-wrap">
+      <!-- Seat Layout -->
+      <div class="seat-layout-card">
+        <h3>Choose Your Seats</h3>
+        <div class="seat-legend">
+          <div class="legend-item"><div class="legend-box available"></div> Available</div>
+          <div class="legend-item"><div class="legend-box selected"></div> Selected</div>
+          <div class="legend-item"><div class="legend-box booked"></div> Booked</div>
+        </div>
+        <div class="bus-front">
+          <span class="bus-front-label">🚌 Driver — Front of Bus</span>
+        </div>
+        <div class="seat-grid" id="seatGrid"></div>
+      </div>
+
+      <!-- Passenger Form -->
+      <div class="passenger-form-panel">
+        <h3>Passenger Details</h3>
+        <div class="selected-seats-info">
+          Selected: <span id="selectedSeatsInfo">No seats selected</span>
+        </div>
+        <div id="passengerForms"></div>
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:var(--muted);">
+            <span>Ticket fare</span><span id="fareBreakdown">₹0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:var(--muted);">
+            <span>Service fee</span><span id="serviceFee">₹0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;margin-top:8px;">
+            <span>Total</span><span id="totalFare" style="color:var(--accent);">₹0</span>
+          </div>
+        </div>
+        <button class="proceed-btn" id="proceedBtn" disabled onclick="proceedToConfirm()">
+          Proceed to Payment →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const FROM = params.get('from') || '';
+    const TO = params.get('to') || '';
+    const DATE = params.get('date') || '';
+    const PASSENGERS = parseInt(params.get('passengers') || '1');
+    const BUS_ID = params.get('busId') || 'BG101';
+
+    const bus = getBusById(BUS_ID);
+    if (!bus) { alert('Bus not found!'); history.back(); }
+
+    document.getElementById('summaryRoute').textContent = `${FROM} → ${TO}`;
+    document.getElementById('summaryMeta').textContent = `${bus.operator} · ${bus.type} · ${formatDate(DATE)}`;
+    document.getElementById('summaryPrice').textContent = `₹${bus.price.toLocaleString()}`;
+
+    let selectedSeats = [];
+
+    function buildSeatGrid() {
+      const grid = document.getElementById('seatGrid');
+      const totalSeats = 40;
+      let html = '';
+
+      for (let i = 1; i <= totalSeats; i++) {
+        const col = ((i - 1) % 5) + 1;
+        const isBooked = bus.bookedSeats.includes(i);
+        const isAisle = col === 3;
+        const isSelected = selectedSeats.includes(i);
+
+        if (isAisle) {
+          html += `<div class="seat aisle-gap"></div>`;
+        }
+
+        html += `<div class="seat ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}" 
+                  data-seat="${i}" onclick="toggleSeat(${i}, ${isBooked})">
+                  ${i}
+                </div>`;
+      }
+      grid.innerHTML = html;
+    }
+
+    function toggleSeat(seatNum, isBooked) {
+      if (isBooked) return;
+
+      const idx = selectedSeats.indexOf(seatNum);
+      if (idx !== -1) {
+        selectedSeats.splice(idx, 1);
+      } else {
+        if (selectedSeats.length >= PASSENGERS) {
+          alert(`You can only select ${PASSENGERS} seat${PASSENGERS > 1 ? 's' : ''}.`);
+          return;
+        }
+        selectedSeats.push(seatNum);
+      }
+
+      buildSeatGrid();
+      updateSeatInfo();
+      buildPassengerForms();
+    }
+
+    function updateSeatInfo() {
+      const info = document.getElementById('selectedSeatsInfo');
+      const fare = selectedSeats.length * bus.price;
+      const fee = Math.round(fare * 0.05);
+      const total = fare + fee;
+
+      info.textContent = selectedSeats.length > 0
+        ? `Seats ${selectedSeats.sort((a,b)=>a-b).join(', ')} (${selectedSeats.length} of ${PASSENGERS})`
+        : 'No seats selected';
+
+      document.getElementById('fareBreakdown').textContent = `₹${fare.toLocaleString()}`;
+      document.getElementById('serviceFee').textContent = `₹${fee.toLocaleString()}`;
+      document.getElementById('totalFare').textContent = `₹${total.toLocaleString()}`;
+
+      const allFilled = checkFormsFilled();
+      document.getElementById('proceedBtn').disabled = selectedSeats.length !== PASSENGERS || !allFilled;
+    }
+
+    function buildPassengerForms() {
+      const container = document.getElementById('passengerForms');
+      if (selectedSeats.length === 0) { container.innerHTML = ''; return; }
+
+      container.innerHTML = selectedSeats.sort((a,b)=>a-b).map((seat, i) => `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;letter-spacing:1px;">SEAT ${seat} — PASSENGER ${i + 1}</div>
+          <div class="form-field">
+            <label>Name</label>
+            <input type="text" id="name_${seat}" placeholder="Full name" oninput="updateSeatInfo()" required/>
+          </div>
+          <div class="form-field">
+            <label>Age</label>
+            <input type="number" id="age_${seat}" placeholder="Age" min="1" max="100" oninput="updateSeatInfo()" required/>
+          </div>
+          <div class="form-field">
+            <label>Gender</label>
+            <select id="gender_${seat}" onchange="updateSeatInfo()">
+              <option value="">Select</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function checkFormsFilled() {
+      return selectedSeats.every(seat => {
+        const name = document.getElementById(`name_${seat}`)?.value.trim();
+        const age = document.getElementById(`age_${seat}`)?.value.trim();
+        const gender = document.getElementById(`gender_${seat}`)?.value;
+        return name && age && gender;
+      });
+    }
+
+    function proceedToConfirm() {
+      if (selectedSeats.length !== PASSENGERS) return;
+      if (!checkFormsFilled()) { alert('Please fill all passenger details.'); return; }
+
+      const passengers = selectedSeats.map(seat => ({
+        seat,
+        name: document.getElementById(`name_${seat}`).value.trim(),
+        age: document.getElementById(`age_${seat}`).value.trim(),
+        gender: document.getElementById(`gender_${seat}`).value
+      }));
+
+      const booking = {
+        pnr: generatePNR(),
+        busId: BUS_ID,
+        operator: bus.operator,
+        busType: bus.type,
+        from: FROM, to: TO, date: DATE,
+        departure: bus.departure, arrival: bus.arrival,
+        duration: bus.duration,
+        seats: selectedSeats,
+        passengers,
+        fare: selectedSeats.length * bus.price,
+        serviceFee: Math.round(selectedSeats.length * bus.price * 0.05),
+        total: selectedSeats.length * bus.price + Math.round(selectedSeats.length * bus.price * 0.05),
+        status: 'Confirmed',
+        bookedOn: new Date().toISOString()
+      };
+
+      BookingStore.add(booking);
+      window.location.href = `confirmation.html?pnr=${booking.pnr}`;
+    }
+
+    buildSeatGrid();
+    buildPassengerForms();
+  </script>
+</body>
+</html>

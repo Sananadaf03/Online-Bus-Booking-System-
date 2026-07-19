@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Available Buses — BusGo</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo"><a href="../index.html" style="text-decoration:none;color:inherit;">🚌 BusGo</a></div>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <p class="breadcrumb"><a href="../index.html">Home</a> / Search Results</p>
+    <h1 class="route-title" id="routeTitle">Loading...</h1>
+    <p class="route-meta" id="routeMeta"></p>
+  </div>
+
+  <div class="results-layout">
+    <!-- FILTERS -->
+    <aside class="filters-panel">
+      <h3>Filters</h3>
+
+      <div class="filter-group">
+        <h4>Bus Type</h4>
+        <label class="filter-option"><input type="checkbox" value="Sleeper" onchange="applyFilters()"/> <span>Sleeper</span></label>
+        <label class="filter-option"><input type="checkbox" value="Seater" onchange="applyFilters()"/> <span>Seater</span></label>
+        <label class="filter-option"><input type="checkbox" value="Volvo" onchange="applyFilters()"/> <span>Volvo</span></label>
+        <label class="filter-option"><input type="checkbox" value="Luxury" onchange="applyFilters()"/> <span>Luxury</span></label>
+        <label class="filter-option"><input type="checkbox" value="Non-AC" onchange="applyFilters()"/> <span>Non-AC</span></label>
+      </div>
+
+      <div class="filter-group">
+        <h4>Departure Time</h4>
+        <label class="filter-option"><input type="checkbox" value="morning" onchange="applyFilters()"/> <span>Morning (6 AM – 12 PM)</span></label>
+        <label class="filter-option"><input type="checkbox" value="afternoon" onchange="applyFilters()"/> <span>Afternoon (12 – 6 PM)</span></label>
+        <label class="filter-option"><input type="checkbox" value="night" onchange="applyFilters()"/> <span>Night (6 PM – 6 AM)</span></label>
+      </div>
+
+      <div class="filter-group">
+        <h4>Max Price: ₹<span id="priceVal">1200</span></h4>
+        <div class="price-range">
+          <input type="range" min="400" max="1200" value="1200" step="50" id="priceRange" oninput="updatePrice(this.value)"/>
+          <div class="price-display"><span>₹400</span><span>₹1200</span></div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h4>Amenities</h4>
+        <label class="filter-option"><input type="checkbox" value="WiFi" onchange="applyFilters()"/> <span>WiFi</span></label>
+        <label class="filter-option"><input type="checkbox" value="USB" onchange="applyFilters()"/> <span>USB Charging</span></label>
+        <label class="filter-option"><input type="checkbox" value="AC" onchange="applyFilters()"/> <span>AC</span></label>
+      </div>
+    </aside>
+
+    <!-- BUS LIST -->
+    <main>
+      <div class="sort-bar">
+        <p class="result-count" id="resultCount">Loading buses...</p>
+        <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="rating">Best Rated</option>
+          <option value="departure">Departure Time</option>
+        </select>
+      </div>
+      <div class="bus-list" id="busList"></div>
+    </main>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const FROM = params.get('from') || 'Chennai';
+    const TO = params.get('to') || 'Bangalore';
+    const DATE = params.get('date') || new Date().toISOString().split('T')[0];
+    const PASSENGERS = parseInt(params.get('passengers') || '1');
+
+    document.getElementById('routeTitle').textContent = `${FROM} → ${TO}`;
+    document.getElementById('routeMeta').textContent = `${formatDate(DATE)} · ${PASSENGERS} Passenger${PASSENGERS > 1 ? 's' : ''}`;
+
+    let maxPrice = 1200;
+
+    function updatePrice(val) {
+      maxPrice = parseInt(val);
+      document.getElementById('priceVal').textContent = val;
+      applyFilters();
+    }
+
+    function getTimePeriod(time) {
+      const h = parseInt(time.split(':')[0]);
+      if (h >= 6 && h < 12) return 'morning';
+      if (h >= 12 && h < 18) return 'afternoon';
+      return 'night';
+    }
+
+    function applyFilters() {
+      const typeChecks = [...document.querySelectorAll('.filter-group:nth-child(1) input:checked')].map(i => i.value);
+      const timeChecks = [...document.querySelectorAll('.filter-group:nth-child(2) input:checked')].map(i => i.value);
+      const amenChecks = [...document.querySelectorAll('.filter-group:nth-child(4) input:checked')].map(i => i.value);
+      const sort = document.getElementById('sortSelect').value;
+
+      let buses = getBuses({ sort, maxPrice });
+
+      if (typeChecks.length > 0) {
+        buses = buses.filter(b => typeChecks.some(t => b.type.includes(t)));
+      }
+      if (timeChecks.length > 0) {
+        buses = buses.filter(b => timeChecks.includes(getTimePeriod(b.departure)));
+      }
+      if (amenChecks.length > 0) {
+        buses = buses.filter(b => amenChecks.every(a => b.amenities.some(am => am.includes(a))));
+      }
+
+      renderBuses(buses);
+    }
+
+    function renderBuses(buses) {
+      const list = document.getElementById('busList');
+      document.getElementById('resultCount').textContent = `${buses.length} buses found`;
+
+      if (buses.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">
+          <div style="font-size:48px;margin-bottom:16px;">🚌</div>
+          <p style="font-size:18px;font-weight:600;margin-bottom:8px;">No buses found</p>
+          <p>Try adjusting your filters</p>
+        </div>`;
+        return;
+      }
+
+      list.innerHTML = buses.map(bus => `
+        <div class="bus-card" onclick="bookBus('${bus.id}')">
+          <div>
+            <div class="bus-operator">${bus.operator}</div>
+            <div class="bus-type">${bus.type}</div>
+            <div class="bus-rating">
+              <span class="star">★</span> ${bus.rating} <span style="color:var(--muted);margin-left:2px;">(${bus.reviews.toLocaleString()})</span>
+            </div>
+            <div class="amenities">
+              ${bus.amenities.map(a => `<span class="amenity">${a}</span>`).join('')}
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div class="time-block">
+              <div class="time">${bus.departure}</div>
+              <div class="city-label">${FROM}</div>
+            </div>
+            <div class="journey-mid">
+              <div class="duration-badge">${bus.duration}</div>
+              <div class="journey-line"></div>
+              <div class="stops-label">${bus.stops}</div>
+            </div>
+            <div class="time-block">
+              <div class="time">${bus.arrival}</div>
+              <div class="city-label">${TO}</div>
+            </div>
+          </div>
+
+          <div></div>
+
+          <div class="bus-price-block">
+            <div class="price-label">Per Seat</div>
+            <div class="price">₹${bus.price.toLocaleString()}</div>
+            <div class="seats-left">${bus.seatsAvailable} seats left</div>
+            <button class="book-btn" onclick="event.stopPropagation();bookBus('${bus.id}')">Select Seats →</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function bookBus(busId) {
+      const searchParams = new URLSearchParams({ from: FROM, to: TO, date: DATE, passengers: PASSENGERS, busId });
+      window.location.href = `seat-selection.html?${searchParams}`;
+    }
+
+    applyFilters();
+  </script>
+</body>
+</html>

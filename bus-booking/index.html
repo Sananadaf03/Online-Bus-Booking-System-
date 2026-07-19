@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BusGo — Book Your Journey</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="logo">🚌 BusGo</div>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="pages/my-bookings.html">My Bookings</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <p class="hero-tag">Fast · Reliable · Affordable</p>
+      <h1>Where are you<br/><span class="accent">headed today?</span></h1>
+      <p class="hero-sub">Book intercity bus tickets in seconds. 500+ routes across India.</p>
+    </div>
+  </section>
+
+  <!-- SEARCH BOX -->
+  <section class="search-section">
+    <div class="search-card glass">
+      <div class="search-tabs">
+        <button class="tab active" data-tab="oneway">One Way</button>
+        <button class="tab" data-tab="roundtrip">Round Trip</button>
+      </div>
+      <form class="search-form" id="searchForm">
+        <div class="field-group">
+          <label>From</label>
+          <div class="input-wrap">
+            <span class="icon">📍</span>
+            <input type="text" id="fromCity" placeholder="Departure city" list="cities" required autocomplete="off"/>
+          </div>
+        </div>
+
+        <button type="button" class="swap-btn" id="swapBtn" title="Swap cities">⇄</button>
+
+        <div class="field-group">
+          <label>To</label>
+          <div class="input-wrap">
+            <span class="icon">🏁</span>
+            <input type="text" id="toCity" placeholder="Destination city" list="cities" required autocomplete="off"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Date</label>
+          <div class="input-wrap">
+            <span class="icon">📅</span>
+            <input type="date" id="travelDate" required/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Passengers</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <select id="passengers">
+              <option value="1">1 Passenger</option>
+              <option value="2">2 Passengers</option>
+              <option value="3">3 Passengers</option>
+              <option value="4">4 Passengers</option>
+              <option value="5">5 Passengers</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="search-btn">Search Buses →</button>
+      </form>
+    </div>
+
+    <!-- Popular Routes -->
+    <div class="popular-routes">
+      <p class="section-label">Popular Routes</p>
+      <div class="route-chips">
+        <button class="chip" data-from="Chennai" data-to="Bangalore">Chennai → Bangalore</button>
+        <button class="chip" data-from="Mumbai" data-to="Pune">Mumbai → Pune</button>
+        <button class="chip" data-from="Delhi" data-to="Agra">Delhi → Agra</button>
+        <button class="chip" data-from="Hyderabad" data-to="Chennai">Hyderabad → Chennai</button>
+        <button class="chip" data-from="Kolkata" data-to="Bhubaneswar">Kolkata → Bhubaneswar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY BUSGO -->
+  <section class="features">
+    <h2>Why BusGo?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Instant Confirmation</h3>
+        <p>Get your ticket confirmed in under 60 seconds, no waiting.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">💳</div>
+        <h3>Secure Payments</h3>
+        <p>UPI, cards, net banking — all transactions are encrypted & safe.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🔄</div>
+        <h3>Easy Cancellation</h3>
+        <p>Cancel up to 2 hours before departure for a full refund.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🌙</div>
+        <h3>Overnight Routes</h3>
+        <p>Sleeper coaches available on 200+ routes across India.</p>
+      </div>
+    </div>
+  </section>
+
+  <datalist id="cities">
+    <option value="Chennai"/>
+    <option value="Bangalore"/>
+    <option value="Mumbai"/>
+    <option value="Pune"/>
+    <option value="Delhi"/>
+    <option value="Agra"/>
+    <option value="Hyderabad"/>
+    <option value="Kolkata"/>
+    <option value="Bhubaneswar"/>
+    <option value="Jaipur"/>
+    <option value="Ahmedabad"/>
+    <option value="Surat"/>
+    <option value="Kochi"/>
+    <option value="Coimbatore"/>
+    <option value="Madurai"/>
+    <option value="Trichy"/>
+    <option value="Vijayawada"/>
+    <option value="Visakhapatnam"/>
+    <option value="Nagpur"/>
+    <option value="Indore"/>
+  </datalist>
+
+  <footer class="footer">
+    <p>© 2025 BusGo. Made with ❤️ for travelers.</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

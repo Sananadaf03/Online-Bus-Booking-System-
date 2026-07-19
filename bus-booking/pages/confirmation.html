@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking Confirmed — BusGo</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo"><a href="../index.html" style="text-decoration:none;color:inherit;">🚌 BusGo</a></div>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </div>
+  </nav>
+
+  <div class="confirm-page">
+    <!-- Steps -->
+    <div class="booking-steps" style="margin-bottom:32px;">
+      <div class="step done">1. Search</div>
+      <div class="step done">2. Select Seats</div>
+      <div class="step done">3. Passenger Info</div>
+      <div class="step active">4. Confirmed ✓</div>
+    </div>
+
+    <!-- Success Banner -->
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:56px;margin-bottom:12px;animation:fadeUp 0.5s ease both;">🎉</div>
+      <h1 style="font-family:var(--font-head);font-size:28px;font-weight:800;letter-spacing:-1px;animation:fadeUp 0.5s 0.1s ease both;">Booking Confirmed!</h1>
+      <p style="color:var(--muted);margin-top:8px;animation:fadeUp 0.5s 0.2s ease both;">Your ticket has been booked. Have a safe journey!</p>
+    </div>
+
+    <!-- Ticket Card -->
+    <div class="ticket-card" id="ticketCard">
+      <div class="ticket-header">
+        <div>
+          <h2>BusGo Ticket</h2>
+          <p class="ticket-pnr" id="ticketPNR">PNR: Loading...</p>
+        </div>
+        <div class="ticket-qr">🎫</div>
+      </div>
+      <div class="ticket-body">
+        <div class="ticket-route" id="ticketRoute">
+          <!-- filled by JS -->
+        </div>
+        <hr class="ticket-divider"/>
+        <div class="ticket-details" id="ticketDetails">
+          <!-- filled by JS -->
+        </div>
+      </div>
+      <div class="ticket-footer">
+        <div>
+          <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Total Paid</div>
+          <div class="total-fare" id="totalFare">₹0</div>
+        </div>
+        <div class="status-badge" id="statusBadge">✓ Confirmed</div>
+      </div>
+    </div>
+
+    <!-- Passenger Table -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;" id="passengerTable">
+      <h3 style="font-family:var(--font-head);font-size:16px;margin-bottom:16px;">Passenger Details</h3>
+      <table style="width:100%;border-collapse:collapse;" id="paxTable">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Name</th>
+            <th style="text-align:left;padding:8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Age</th>
+            <th style="text-align:left;padding:8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Gender</th>
+            <th style="text-align:left;padding:8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Seat</th>
+          </tr>
+        </thead>
+        <tbody id="paxBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Actions -->
+    <div class="confirm-actions">
+      <a href="../index.html" class="btn-outline">← Book Another</a>
+      <a href="my-bookings.html" class="btn-primary">View My Bookings →</a>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const PNR = params.get('pnr');
+
+    const bookings = BookingStore.getAll();
+    const booking = bookings.find(b => b.pnr === PNR);
+
+    if (!booking) {
+      document.querySelector('.confirm-page').innerHTML = `
+        <div style="text-align:center;padding:80px;color:var(--muted);">
+          <div style="font-size:48px;margin-bottom:16px;">😕</div>
+          <p style="font-size:18px;font-weight:600;margin-bottom:8px;">Booking not found</p>
+          <a href="../index.html" class="btn-primary" style="display:inline-block;margin-top:16px;padding:12px 28px;text-decoration:none;">Go Home</a>
+        </div>`;
+    } else {
+      document.getElementById('ticketPNR').textContent = `PNR: ${booking.pnr}`;
+
+      document.getElementById('ticketRoute').innerHTML = `
+        <div class="time-block">
+          <div class="ticket-city">${booking.from}</div>
+          <div class="ticket-time">${booking.departure}</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">${booking.duration}</div>
+          <div style="height:2px;background:linear-gradient(to right,var(--border),var(--accent),var(--border));border-radius:2px;"></div>
+        </div>
+        <div class="time-block" style="text-align:right;">
+          <div class="ticket-city">${booking.to}</div>
+          <div class="ticket-time">${booking.arrival}</div>
+        </div>`;
+
+      document.getElementById('ticketDetails').innerHTML = `
+        <div class="detail-item">
+          <label>Date</label>
+          <span>${formatDate(booking.date)}</span>
+        </div>
+        <div class="detail-item">
+          <label>Operator</label>
+          <span>${booking.operator}</span>
+        </div>
+        <div class="detail-item">
+          <label>Bus Type</label>
+          <span>${booking.busType}</span>
+        </div>
+        <div class="detail-item">
+          <label>Seats</label>
+          <span>${booking.seats.join(', ')}</span>
+        </div>
+        <div class="detail-item">
+          <label>Passengers</label>
+          <span>${booking.passengers.length}</span>
+        </div>
+        <div class="detail-item">
+          <label>Booked On</label>
+          <span>${new Date(booking.bookedOn).toLocaleDateString('en-IN')}</span>
+        </div>`;
+
+      document.getElementById('totalFare').textContent = `₹${booking.total.toLocaleString()}`;
+
+      if (booking.status === 'Cancelled') {
+        const badge = document.getElementById('statusBadge');
+        badge.textContent = '✗ Cancelled';
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = 'var(--danger)';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+
+      const paxBody = document.getElementById('paxBody');
+      paxBody.innerHTML = booking.passengers.map(p => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 8px;font-size:14px;">${p.name}</td>
+          <td style="padding:10px 8px;font-size:14px;">${p.age}</td>
+          <td style="padding:10px 8px;font-size:14px;">${p.gender}</td>
+          <td style="padding:10px 8px;font-size:14px;color:var(--accent);font-weight:600;">Seat ${p.seat}</td>
+        </tr>`).join('');
+    }
+  </script>
+</body>
+</html>
